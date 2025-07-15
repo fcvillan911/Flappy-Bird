@@ -1,0 +1,176 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Flappy 143</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(120deg, #89f7fe, #66a6ff);
+    }
+    #redirect {
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      background: #fff;
+      border: none;
+      color: #333;
+      font-weight: bold;
+      padding: 8px 16px;
+      border-radius: 25px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      transition: 0.3s;
+    }
+    #redirect:hover {
+      background: #eee;
+    }
+    canvas {
+      display: block;
+      margin: auto;
+      background: #e0f7fa;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.2);
+    }
+  </style>
+</head>
+<body>
+
+<button id="redirect" onclick="window.location.href='https://example.com'">143</button>
+<canvas id="game" width="400" height="600"></canvas>
+
+<script>
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+
+  // Load sounds
+  const flapSound = new Audio('https://www.soundjay.com/button/sounds/button-16.mp3');
+  const hitSound = new Audio('https://www.soundjay.com/button/sounds/button-10.mp3');
+  const scoreSound = new Audio('https://www.soundjay.com/button/sounds/button-4.mp3');
+
+  let frames = 0;
+  const DEG = Math.PI / 180;
+  let score = 0;
+
+  const bird = {
+    x: 50,
+    y: 150,
+    w: 30,
+    h: 30,
+    gravity: 0.25,
+    lift: -4.8,
+    velocity: 0,
+    color: '#ffeb3b',
+    draw() {
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, 15, 0, Math.PI * 2);
+      ctx.fillStyle = this.color;
+      ctx.fill();
+      ctx.closePath();
+    },
+    update() {
+      this.velocity += this.gravity;
+      this.y += this.velocity;
+      if (this.y + 15 > canvas.height) {
+        gameOver();
+      }
+    },
+    flap() {
+      this.velocity = this.lift;
+      flapSound.currentTime = 0;
+      flapSound.play();
+    }
+  };
+
+  const pipes = [];
+  const pipeWidth = 60;
+  const gap = 140;
+  let pipeSpeed = 2;
+
+  function createPipe() {
+    let top = Math.random() * (canvas.height / 2);
+    pipes.push({
+      x: canvas.width,
+      top: top,
+      bottom: canvas.height - top - gap,
+      passed: false
+    });
+  }
+
+  function drawPipe(pipe) {
+    ctx.fillStyle = '#4caf50';
+    ctx.fillRect(pipe.x, 0, pipeWidth, pipe.top);
+    ctx.fillRect(pipe.x, canvas.height - pipe.bottom, pipeWidth, pipe.bottom);
+  }
+
+  function updatePipes() {
+    pipes.forEach((pipe, i) => {
+      pipe.x -= pipeSpeed;
+
+      if (
+        bird.x + 15 > pipe.x && bird.x - 15 < pipe.x + pipeWidth &&
+        (bird.y - 15 < pipe.top || bird.y + 15 > canvas.height - pipe.bottom)
+      ) {
+        gameOver();
+      }
+
+      if (!pipe.passed && pipe.x + pipeWidth < bird.x) {
+        score++;
+        scoreSound.play();
+        pipe.passed = true;
+      }
+
+      if (pipe.x + pipeWidth < 0) {
+        pipes.splice(i, 1);
+      }
+    });
+  }
+
+  function drawScore() {
+    ctx.fillStyle = '#333';
+    ctx.font = '24px Segoe UI';
+    ctx.fillText('Score: ' + score, 280, 40);
+  }
+
+  function drawBackground() {
+    ctx.fillStyle = '#b2ebf2';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+
+  function gameOver() {
+    hitSound.play();
+    alert('Game Over!\nScore: ' + score);
+    document.location.reload();
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.code === 'Space') bird.flap();
+  });
+  canvas.addEventListener('click', () => bird.flap());
+
+  function gameLoop() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawBackground();
+    if (frames % 90 === 0) createPipe();
+
+    updatePipes();
+    pipes.forEach(drawPipe);
+
+    bird.update();
+    bird.draw();
+
+    drawScore();
+    frames++;
+    requestAnimationFrame(gameLoop);
+  }
+
+  gameLoop();
+</script>
+</body>
+</html>
