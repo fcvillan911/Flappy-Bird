@@ -4,9 +4,7 @@
   <meta charset="UTF-8">
   <title>Flappy 143</title>
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
     body {
       margin: 0;
       overflow: hidden;
@@ -15,20 +13,22 @@
     }
     #redirect {
       position: absolute;
-      top: 15px;
-      left: 15px;
-      background: #fff;
+      top: 20px;
+      left: 20px;
+      background: #ffffffcc;
       border: none;
-      color: #333;
+      color: #222;
       font-weight: bold;
-      padding: 8px 16px;
-      border-radius: 25px;
+      padding: 18px 36px;
+      font-size: 26px;
+      border-radius: 40px;
       cursor: pointer;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+      box-shadow: 0 8px 18px rgba(0,0,0,0.2);
       transition: 0.3s;
+      z-index: 10;
     }
     #redirect:hover {
-      background: #eee;
+      background: #e0e0e0;
     }
     canvas {
       display: block;
@@ -48,37 +48,31 @@
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
 
-  // Load sounds
+  const birdImg = new Image();
+  birdImg.src = 'https://i.imgur.com/U8lLw9Y.png';
+
   const flapSound = new Audio('https://www.soundjay.com/button/sounds/button-16.mp3');
   const hitSound = new Audio('https://www.soundjay.com/button/sounds/button-10.mp3');
   const scoreSound = new Audio('https://www.soundjay.com/button/sounds/button-4.mp3');
 
   let frames = 0;
-  const DEG = Math.PI / 180;
   let score = 0;
 
   const bird = {
     x: 50,
     y: 150,
-    w: 30,
-    h: 30,
+    w: 34,
+    h: 26,
     gravity: 0.25,
     lift: -4.8,
     velocity: 0,
-    color: '#ffeb3b',
     draw() {
-      ctx.beginPath();
-      ctx.arc(this.x, this.y, 15, 0, Math.PI * 2);
-      ctx.fillStyle = this.color;
-      ctx.fill();
-      ctx.closePath();
+      ctx.drawImage(birdImg, this.x, this.y, this.w, this.h);
     },
     update() {
       this.velocity += this.gravity;
       this.y += this.velocity;
-      if (this.y + 15 > canvas.height) {
-        gameOver();
-      }
+      if (this.y + this.h > canvas.height) gameOver();
     },
     flap() {
       this.velocity = this.lift;
@@ -90,16 +84,11 @@
   const pipes = [];
   const pipeWidth = 60;
   const gap = 140;
-  let pipeSpeed = 2;
+  const pipeSpeed = 2;
 
   function createPipe() {
-    let top = Math.random() * (canvas.height / 2);
-    pipes.push({
-      x: canvas.width,
-      top: top,
-      bottom: canvas.height - top - gap,
-      passed: false
-    });
+    const top = Math.random() * (canvas.height / 2);
+    pipes.push({ x: canvas.width, top, bottom: canvas.height - top - gap, passed: false });
   }
 
   function drawPipe(pipe) {
@@ -111,13 +100,11 @@
   function updatePipes() {
     pipes.forEach((pipe, i) => {
       pipe.x -= pipeSpeed;
-
       if (
-        bird.x + 15 > pipe.x && bird.x - 15 < pipe.x + pipeWidth &&
-        (bird.y - 15 < pipe.top || bird.y + 15 > canvas.height - pipe.bottom)
-      ) {
-        gameOver();
-      }
+        bird.x + bird.w > pipe.x &&
+        bird.x < pipe.x + pipeWidth &&
+        (bird.y < pipe.top || bird.y + bird.h > canvas.height - pipe.bottom)
+      ) gameOver();
 
       if (!pipe.passed && pipe.x + pipeWidth < bird.x) {
         score++;
@@ -125,9 +112,7 @@
         pipe.passed = true;
       }
 
-      if (pipe.x + pipeWidth < 0) {
-        pipes.splice(i, 1);
-      }
+      if (pipe.x + pipeWidth < 0) pipes.splice(i, 1);
     });
   }
 
@@ -144,27 +129,25 @@
 
   function gameOver() {
     hitSound.play();
-    alert('Game Over!\nScore: ' + score);
+    alert('Game Over!\\nScore: ' + score);
     document.location.reload();
   }
 
-  document.addEventListener('keydown', e => {
-    if (e.code === 'Space') bird.flap();
-  });
+  document.addEventListener('keydown', e => { if (e.code === 'Space') bird.flap(); });
   canvas.addEventListener('click', () => bird.flap());
+  canvas.addEventListener('touchstart', () => bird.flap());
 
   function gameLoop() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawBackground();
-    if (frames % 90 === 0) createPipe();
 
+    if (frames % 90 === 0) createPipe();
     updatePipes();
     pipes.forEach(drawPipe);
-
     bird.update();
     bird.draw();
-
     drawScore();
+
     frames++;
     requestAnimationFrame(gameLoop);
   }
